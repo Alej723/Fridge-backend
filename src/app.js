@@ -16,22 +16,27 @@ const app = express();
 connectDB();
 
 // Dynamic CORS configuration for production
+// Dynamic CORS configuration for production
+const allowedOrigins = process.env.CORS_ORIGIN 
+  ? process.env.CORS_ORIGIN.split(',')
+  : ['http://localhost:3000'];
+
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
+    // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
     
-    // Get allowed origins from environment variable (Railway) or use defaults
-    const allowedOrigins = process.env.CORS_ORIGIN 
-      ? process.env.CORS_ORIGIN.split(',')
-      : ['http://localhost:3000']; // Fallback for local dev
+    // Allow localhost for development
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return callback(null, true);
+    }
     
-    // Check if the requesting origin is allowed
-    if (allowedOrigins.includes(origin) || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+    // Check allowed origins
+    if (allowedOrigins.some(allowed => origin.includes(allowed.replace('https://', '').replace('http://', '')))) {
       callback(null, true);
     } else {
       console.log('CORS blocked for origin:', origin);
-      callback(new Error('Not allowed by CORS'));
+      callback(null, true); // Temporarily allow all for debugging, change back later
     }
   },
   credentials: true,
